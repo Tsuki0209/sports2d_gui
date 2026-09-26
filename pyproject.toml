@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sports2d-gui"
+version = "0.1.0"
+description = "Desktop GUI for Sports2D markerless 2D biomechanics analysis"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Sports2D GUI Contributors" }]
+dependencies = [
+  "PySide6>=6.7",
+  "tomlkit>=0.13",
+  "sports2d>=0.8.34",
+]
+
+[project.scripts]
+sports2d-gui = "sports2d_gui.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
