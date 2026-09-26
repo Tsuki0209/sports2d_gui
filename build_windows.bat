@@ -1,33 +1,51 @@
 @echo off
+setlocal enabledelayedexpansion
 echo ============================================================
 echo   Sports2D GUI - Windows EXE Build Script
 echo ============================================================
 
-REM Check python or py launcher
-set PYTHON_CMD=python
-where python >nul 2>nul
-if %errorlevel% neq 0 (
-    where py >nul 2>nul
-    if %errorlevel% equ 0 (
-        set PYTHON_CMD=py
-    ) else (
-        echo [ERROR] Python が検出されませんでした。
-        echo Python のインストール時に「Add Python to PATH」にチェックを入れてください。
-        pause
-        exit /b 1
-    )
+echo [*] Python と pip の動作確認中...
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] Python が検出されませんでした。Python (3.11以上) をインストールし、パスを通してください。
+    goto ERROR_END
 )
 
-echo [*] Using Python: %PYTHON_CMD%
+echo [*] 必要なパッケージをインストールしています...
+python -m pip install --upgrade pip
+python -m pip install -e .
+python -m pip install pyinstaller
+if errorlevel 1 (
+    echo [ERROR] パッケージのインストールに失敗しました。
+    goto ERROR_END
+)
 
-%PYTHON_CMD% -m pip install --upgrade pip
-%PYTHON_CMD% -m pip install -e .
-%PYTHON_CMD% -m pip install pyinstaller
+echo [*] PyInstaller を実行して EXE をビルドしています...
+python build_exe.py
+if errorlevel 1 (
+    echo [ERROR] EXE のビルド中にエラーが発生しました。上のエラーログを確認してください。
+    goto ERROR_END
+)
 
-%PYTHON_CMD% build_exe.py
+if exist "dist\Sports2D_GUI\Sports2D_GUI.exe" (
+    echo.
+    echo ============================================================
+    echo   [SUCCESS] ビルド成功！
+    echo   dist\Sports2D_GUI\Sports2D_GUI.exe が作成されました。
+    echo ============================================================
+    explorer "dist\Sports2D_GUI"
+) else (
+    echo [ERROR] ビルド処理は終了しましたが、dist\Sports2D_GUI\Sports2D_GUI.exe が見つかりません。
+    goto ERROR_END
+)
 
+goto END
+
+:ERROR_END
 echo.
 echo ============================================================
-echo   Done! Check dist\Sports2D_GUI\
+echo   [BUILD FAILED] ビルドに失敗しました。
 echo ============================================================
+
+:END
 pause

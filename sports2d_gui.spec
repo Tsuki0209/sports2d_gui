@@ -5,12 +5,27 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 block_cipher = None
 
-datas = collect_data_files('sports2d')
-hiddenimports = (
-    collect_submodules('sports2d_gui') +
-    collect_submodules('PySide6') +
-    ['tomlkit', 'sports2d']
-)
+datas = []
+try:
+    datas += collect_data_files('sports2d')
+except Exception:
+    pass
+
+hiddenimports = [
+    'tomlkit',
+    'sports2d',
+    'PySide6',
+]
+
+try:
+    hiddenimports += collect_submodules('sports2d_gui')
+except Exception:
+    pass
+
+try:
+    hiddenimports += collect_submodules('PySide6')
+except Exception:
+    pass
 
 a = Analysis(
     ['run_gui.py'],
@@ -40,7 +55,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,  # GUI application, no black console window
+    console=False,
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,

@@ -20,7 +20,7 @@ def main():
     try:
         import PyInstaller
     except ImportError:
-        print("[!] PyInstaller is not installed. Installing...")
+        print("[*] PyInstaller is not installed. Installing via pip...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "pyinstaller"])
 
     # 2. Path preparation
@@ -45,15 +45,18 @@ def main():
 
     res = subprocess.run(cmd, cwd=root_dir)
 
-    if res.returncode == 0:
+    output_exe = root_dir / "dist" / "Sports2D_GUI" / "Sports2D_GUI.exe"
+
+    if res.returncode == 0 and output_exe.exists():
         print("\n" + "=" * 60)
-        print(" Build Success!")
-        output_dir = root_dir / "dist" / "Sports2D_GUI"
-        print(f" Executable directory: {output_dir}")
+        print(" [SUCCESS] Build Finished Successfully!")
+        print(f" Executable path: {output_exe}")
         print("=" * 60)
     else:
-        print(f"\n[!] Build failed with return code {res.returncode}")
-        sys.exit(res.returncode)
+        print(f"\n[!] Build failed or executable was not generated.")
+        print(f"    Return code: {res.returncode}")
+        print(f"    Expected EXE path: {output_exe}")
+        sys.exit(1 if res.returncode == 0 else res.returncode)
 
 
 if __name__ == "__main__":
