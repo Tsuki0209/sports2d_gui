@@ -1,64 +1,33 @@
 @echo off
-setlocal enabledelayedexpansion
-
 echo ============================================================
 echo   Sports2D GUI - Windows EXE Build Script
 echo ============================================================
 
-REM 1. Check Python installation
+REM Check python or py launcher
+set PYTHON_CMD=python
 where python >nul 2>nul
 if %errorlevel% neq 0 (
     where py >nul 2>nul
-    if %errorlevel% neq 0 (
-        echo [ERROR] Python not found in PATH!
-        echo Please install Python 3.11+ and check "Add python.exe to PATH"
-        goto error
+    if %errorlevel% equ 0 (
+        set PYTHON_CMD=py
     ) else (
-        set PYCMD=py -3
+        echo [ERROR] Python が検出されませんでした。
+        echo Python のインストール時に「Add Python to PATH」にチェックを入れてください。
+        pause
+        exit /b 1
     )
-) else (
-    set PYCMD=python
 )
 
-echo [*] Using Python command: !PYCMD!
+echo [*] Using Python: %PYTHON_CMD%
 
-REM 2. Create and activate venv if not exists
-if not exist .venv (
-    echo [*] Creating virtual environment .venv...
-    !PYCMD! -m venv .venv
-    if %errorlevel% neq 0 goto error
-)
+%PYTHON_CMD% -m pip install --upgrade pip
+%PYTHON_CMD% -m pip install -e .
+%PYTHON_CMD% -m pip install pyinstaller
 
-set VENV_PYTHON=.venv\Scripts\python.exe
-
-REM 3. Install/Upgrade dependencies
-echo [*] Installing dependencies...
-!VENV_PYTHON! -m pip install --upgrade pip
-if %errorlevel% neq 0 goto error
-
-!VENV_PYTHON! -m pip install pyinstaller tomlkit PySide6 sports2d
-if %errorlevel% neq 0 goto error
-
-!VENV_PYTHON! -m pip install -e .
-if %errorlevel% neq 0 goto error
-
-REM 4. Build EXE
-echo [*] Running PyInstaller build...
-!VENV_PYTHON! build_exe.py
-if %errorlevel% neq 0 goto error
+%PYTHON_CMD% build_exe.py
 
 echo.
 echo ============================================================
-echo   [SUCCESS] Build Completed! 
-echo   Executable location: dist\Sports2D_GUI\Sports2D_GUI.exe
+echo   Done! Check dist\Sports2D_GUI\
 echo ============================================================
 pause
-exit /b 0
-
-:error
-echo.
-echo ============================================================
-echo   [ERROR] Build failed! Check error messages above.
-echo ============================================================
-pause
-exit /b 1
