@@ -1,5 +1,9 @@
 @echo off
+chcp 65001 >nul
 setlocal enabledelayedexpansion
+set PYTHONUTF8=1
+set PYTHONIOENCODING=utf-8
+
 echo ============================================================
 echo   Sports2D GUI - Windows EXE Build Script
 echo ============================================================
@@ -7,7 +11,7 @@ echo ============================================================
 echo [*] Python と pip の動作確認中...
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo [ERROR] Python が検出されませんでした。Python (3.11以上) をインストールし、パスを通してください。
+    echo [ERROR] Python が検出されませんでした。Python (3.11以上) をインストールし、PATH を通してください。
     goto ERROR_END
 )
 
