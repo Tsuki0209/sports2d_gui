@@ -128,13 +128,46 @@ def merge_dicts(dst: dict[str, Any], src: dict[str, Any]) -> dict[str, Any]:
     return dst
 
 
+PRESETS: dict[str, dict[str, Any]] = {
+    "標準設定 (Standard)": deepcopy(DEFAULT_CONFIG),
+    "高精度・詳細解析 (Performance & Filtered)": merge_dicts(
+        deepcopy(DEFAULT_CONFIG),
+        {
+            "pose": {"mode": "performance", "det_frequency": 1},
+            "post-processing": {"filter_type": "kalman"},
+        },
+    ),
+    "高速スクリーニング (Fast Lightweight)": merge_dicts(
+        deepcopy(DEFAULT_CONFIG),
+        {
+            "pose": {"mode": "lightweight", "det_frequency": 6},
+            "base": {"save_img": False},
+        },
+    ),
+    "OpenSim 連携 (Kinematics & IK)": merge_dicts(
+        deepcopy(DEFAULT_CONFIG),
+        {
+            "kinematics": {"do_augmentation": True, "do_ik": True, "filter_ik": True},
+            "px_to_meters_conversion": {"make_c3d": True},
+        },
+    ),
+}
+
+
 def default_config() -> dict[str, Any]:
     return deepcopy(DEFAULT_CONFIG)
 
 
+def get_preset(name: str) -> dict[str, Any]:
+    return deepcopy(PRESETS.get(name, DEFAULT_CONFIG))
+
+
 def load_toml(path: str | Path) -> dict[str, Any]:
     with Path(path).open("rb") as f:
-        return dict(load(f))
+        data = dict(load(f))
+    base = default_config()
+    merge_dicts(base, data)
+    return base
 
 
 def dump_toml(config: dict[str, Any], path: str | Path) -> None:
@@ -144,34 +177,39 @@ def dump_toml(config: dict[str, Any], path: str | Path) -> None:
 def validate_config(config: dict[str, Any]) -> list[str]:
     issues: list[str] = []
     base = config.get("base", {})
-    if not base.get("video_input"):
-        issues.append("base.video_input が空です。動画または webcam を指定してください。")
+    vids = base.get("video_input")
+    if not vids or (isinstance(vids, list) and len(vids) == 0) or (isinstance(vids, str) and not vids.strip()):
+        issues.append("base.video_input が空です。動画ファイルまたは 'webcam' を指定してください。")
     if base.get("nb_persons_to_detect") not in ("all", None):
         try:
             if int(base["nb_persons_to_detect"]) < 1:
-                issues.append("nb_persons_to_detect は 1 以上、または all にしてください。")
+                issues.append("nb_persons_to_detect は 1 以上、または 'all' にしてください。")
         except (ValueError, TypeError):
             issues.append("nb_persons_to_detect の値が不正です。")
+
     pose = config.get("pose", {})
     try:
         if int(pose.get("det_frequency", 1)) < 1:
-            issues.append("pose.det_frequency は 1 以上にしてください。")
+            issues.append("pose.det_frequency は 1 以上の整数にしてください。")
     except (ValueError, TypeError):
         issues.append("pose.det_frequency の値が不正です。")
+
     for key in ("keypoint_likelihood_threshold", "average_likelihood_threshold", "keypoint_number_threshold"):
         try:
             value = float(pose.get(key, 0))
             if not 0 <= value <= 1:
-                issues.append(f"pose.{key} は 0～1 の範囲にしてください。")
+                issues.append(f"pose.{key} は 0.0 ～ 1.0 の範囲にしてください。")
         except (ValueError, TypeError):
             issues.append(f"pose.{key} の値が不正です。")
+
     px = config.get("px_to_meters_conversion", {})
     if px.get("perspective_unit") in {"distance_m", "f_px", "fov_deg", "fov_rad"}:
         try:
-            if float(px.get("perspective_value")) <= 0:
-                issues.append("perspective_value は正の値にしてください。")
+            if float(px.get("perspective_value", 0)) <= 0:
+                issues.append("px_to_meters_conversion.perspective_value は 0 より大きい値にしてください。")
         except (ValueError, TypeError):
-            issues.append("perspective_value の値が不正です。")
+            issues.append("px_to_meters_conversion.perspective_value の値が不正です。")
+
     return issues
 
 

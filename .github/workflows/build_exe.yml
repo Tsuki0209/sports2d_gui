@@ -1,0 +1,41 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller tomlkit PySide6 sports2d
+          pip install -e .
+
+      - name: Build Executable with PyInstaller
+        run: |
+          python build_exe.py
+
+      - name: Compress Executable Directory
+        run: |
+          Compress-Archive -Path dist\Sports2D_GUI\* -DestinationPath Sports2D_GUI_Windows.zip
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sports2D_GUI_Windows_x64
+          path: Sports2D_GUI_Windows.zip
